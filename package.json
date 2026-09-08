@@ -7,10 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:backend": "npm run dev -w @live/backend",
+    "dev:backend": "npm run build -w @live/shared && npm run dev -w @live/backend",
     "dev:dashboard": "npm run dev -w @live/dashboard",
-    "build": "npm run build -ws --if-present",
-    "test": "npm run test -w @live/backend",
+    "build": "npm run build -w @live/shared && npm run build -w @live/backend && npm run build -w @live/dashboard --if-present",
+    "test": "npm run build -w @live/shared && npm run test -w @live/backend",
     "lint": "npm run lint -ws --if-present"
   },
   "engines": {

@@ -14,13 +14,14 @@ RUN npm install --workspace=@live/backend --workspace=@live/shared --include-wor
 FROM deps AS build
 COPY packages/shared packages/shared
 COPY apps/backend apps/backend
-RUN npm run build -w @live/backend
+RUN npm run build -w @live/shared && npm run build -w @live/backend
 
 FROM node:20-slim AS runtime
 WORKDIR /repo
 ENV NODE_ENV=production
 COPY --from=build /repo/node_modules ./node_modules
-COPY --from=build /repo/packages/shared ./packages/shared
+COPY --from=build /repo/packages/shared/dist ./packages/shared/dist
+COPY --from=build /repo/packages/shared/package.json ./packages/shared/package.json
 COPY --from=build /repo/apps/backend/dist ./apps/backend/dist
 COPY --from=build /repo/apps/backend/package.json ./apps/backend/package.json
 
