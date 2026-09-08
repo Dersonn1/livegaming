@@ -1,15 +1,17 @@
 --[[
-	Creates the physical parts/models for spawn-type commands. Ships with
-	simple procedurally-built placeholder parts (colored blocks) so the
-	whole pipeline is testable with zero art assets. For a real game, drop
-	your own models under ServerStorage/NPCs and ServerStorage/Assets and
-	swap the `Instance.new("Part")` blocks below for `model:Clone()` calls —
-	the rest of the command flow does not need to change.
+	Creates the physical models for spawn-type commands. Enemies/bosses/NPCs
+	are real, functional creatures (health, AI via AIService, killable by
+	WeaponService) built by CreatureFactory — not decorative placeholders.
+	Drop a real Model under ServerStorage/NPCs (see its README) named after
+	the enemyType/bossType/npcType and this clones that instead once you
+	have real art content; until then, CreatureFactory's simple blocky
+	creatures are fully playable on their own.
 ]]
 
 local Workspace = game:GetService("Workspace")
 local ServerStorage = game:GetService("ServerStorage")
 local Debris = game:GetService("Debris")
+local CreatureFactory = require(script.Parent.CreatureFactory)
 
 local SpawnService = {}
 
@@ -19,61 +21,73 @@ local function randomSpawnPosition(): Vector3
 	return origin + Vector3.new(math.random(-30, 30), 5, math.random(-30, 30))
 end
 
-local function makePlaceholderPart(name: string, size: Vector3, color: Color3): BasePart
-	local part = Instance.new("Part")
-	part.Name = name
-	part.Size = size
-	part.Color = color
-	part.Anchored = false
-	part.CanCollide = true
-	part.Shape = Enum.PartType.Block
-	part.Position = randomSpawnPosition()
-	part.Parent = Workspace
-	Debris:AddItem(part, 120) -- safety-net cleanup so test spawns never pile up forever
-	return part
-end
-
---- Tries ServerStorage/NPCs/<name> first (real game content); falls back to a placeholder block.
-local function spawnFromStorageOrPlaceholder(storageFolder: Folder, name: string, color: Color3): Instance
+--- Clones a real ServerStorage/NPCs/<name> model if present, positioning it like a creature would be.
+local function cloneStoredTemplate(storageFolder: Folder, name: string): Instance?
 	local template = storageFolder:FindFirstChild(name)
-	if template then
-		local clone = template:Clone()
-		if clone:IsA("Model") and clone.PrimaryPart then
-			clone:SetPrimaryPartCFrame(CFrame.new(randomSpawnPosition()))
-		elseif clone:IsA("BasePart") then
-			clone.Position = randomSpawnPosition()
-		end
-		clone.Parent = Workspace
-		Debris:AddItem(clone, 180)
-		return clone
+	if not template then
+		return nil
 	end
-	return makePlaceholderPart(name, Vector3.new(4, 6, 4), color)
+	local clone = template:Clone()
+	if clone:IsA("Model") and clone.PrimaryPart then
+		clone:SetPrimaryPartCFrame(CFrame.new(randomSpawnPosition()))
+	elseif clone:IsA("BasePart") then
+		clone.Position = randomSpawnPosition()
+	end
+	clone.Parent = Workspace
+	Debris:AddItem(clone, 180)
+	return clone
 end
 
 function SpawnService.spawnEnemy(enemyType: string, amount: number)
-	local npcs = ServerStorage.NPCs
 	for _ = 1, amount do
-		spawnFromStorageOrPlaceholder(npcs, enemyType, Color3.fromRGB(200, 40, 40))
+		if not cloneStoredTemplate(ServerStorage.NPCs, enemyType) then
+			CreatureFactory.spawn({
+				name = enemyType,
+				health = 50,
+				walkSpeed = 14,
+				damage = 8,
+				color = Color3.fromRGB(200, 40, 40),
+				scale = 1,
+				points = 5,
+			}, randomSpawnPosition())
+		end
 	end
 end
 
 function SpawnService.spawnBoss(bossType: string, amount: number)
-	local npcs = ServerStorage.NPCs
 	for _ = 1, amount do
-		local boss = spawnFromStorageOrPlaceholder(npcs, bossType, Color3.fromRGB(120, 0, 160))
-		if boss:IsA("BasePart") then
-			boss.Size = Vector3.new(10, 14, 10) -- bosses are visually distinct even as placeholders
+		if not cloneStoredTemplate(ServerStorage.NPCs, bossType) then
+			CreatureFactory.spawn({
+				name = bossType,
+				health = 500,
+				walkSpeed = 10,
+				damage = 20,
+				color = Color3.fromRGB(120, 0, 160),
+				scale = 2.5,
+				points = 100,
+			}, randomSpawnPosition())
 		end
 	end
 end
 
 function SpawnService.spawnNpc(npcType: string, amount: number)
-	local npcs = ServerStorage.NPCs
 	for _ = 1, amount do
-		spawnFromStorageOrPlaceholder(npcs, npcType, Color3.fromRGB(80, 160, 220))
+		if not cloneStoredTemplate(ServerStorage.NPCs, npcType) then
+			CreatureFactory.spawn({
+				name = npcType,
+				health = 30,
+				walkSpeed = 10,
+				damage = 0, -- friendly NPCs don't attack players
+				color = Color3.fromRGB(80, 160, 220),
+				scale = 1,
+				points = 1,
+			}, randomSpawnPosition())
+		end
 	end
 end
 
+--- Meteors actually explode on impact (Roblox's Explosion class damages nearby
+--- Humanoids natively) instead of just falling through as a visual effect.
 function SpawnService.meteorShower(amount: number, durationSeconds: number)
 	local interval = durationSeconds / math.max(amount, 1)
 
@@ -87,12 +101,28 @@ function SpawnService.meteorShower(amount: number, durationSeconds: number)
 			meteor.Material = Enum.Material.Neon
 			meteor.Position = randomSpawnPosition() + Vector3.new(0, 80, 0)
 			meteor.Parent = Workspace
-			Debris:AddItem(meteor, 15)
 
 			local bodyVelocity = Instance.new("BodyVelocity")
 			bodyVelocity.Velocity = Vector3.new(0, -60, 0)
 			bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)
 			bodyVelocity.Parent = meteor
+
+			local exploded = false
+			local function detonate()
+				if exploded then
+					return
+				end
+				exploded = true
+				local explosion = Instance.new("Explosion")
+				explosion.Position = meteor.Position
+				explosion.BlastRadius = 12
+				explosion.BlastPressure = 200000
+				explosion.Parent = Workspace
+				meteor:Destroy()
+			end
+
+			meteor.Touched:Connect(detonate)
+			Debris:AddItem(meteor, 8) -- detonates via Touched well before this; safety net only
 
 			task.wait(interval)
 		end
