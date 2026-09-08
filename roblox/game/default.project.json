@@ -1,0 +1,42 @@
+{
+  "name": "LiveInteractiveGame",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Shared": {
+        "$path": "src/ReplicatedStorage/Shared"
+      },
+      "Remotes": {
+        "$path": "src/ReplicatedStorage/Remotes"
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "Main": {
+        "$path": "src/ServerScriptService/Main"
+      },
+      "Services": {
+        "$path": "src/ServerScriptService/Services"
+      },
+      "Commands": {
+        "$path": "src/ServerScriptService/Commands"
+      },
+      "Security": {
+        "$path": "src/ServerScriptService/Security"
+      }
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "Assets": {
+        "$path": "src/ServerStorage/Assets"
+      },
+      "NPCs": {
+        "$path": "src/ServerStorage/NPCs"
+      },
+      "Items": {
+        "$path": "src/ServerStorage/Items"
+      }
+    }
+  }
+}

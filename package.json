@@ -1,0 +1,19 @@
+{
+  "name": "live-roblox-platform",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev -w @live/backend",
+    "dev:dashboard": "npm run dev -w @live/dashboard",
+    "build": "npm run build -ws --if-present",
+    "test": "npm run test -w @live/backend",
+    "lint": "npm run lint -ws --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
