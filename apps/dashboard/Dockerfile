@@ -21,7 +21,6 @@ FROM node:20-slim AS runtime
 WORKDIR /repo/apps/dashboard
 ENV NODE_ENV=production
 COPY --from=build /repo/node_modules /repo/node_modules
-COPY --from=build /repo/apps/dashboard/node_modules ./node_modules
 COPY --from=build /repo/apps/dashboard/.next ./.next
 COPY --from=build /repo/apps/dashboard/public ./public
 COPY --from=build /repo/apps/dashboard/package.json ./package.json
