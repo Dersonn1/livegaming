@@ -102,6 +102,28 @@ function SpawnService.meteorShower(amount: number, durationSeconds: number)
 			meteor.Position = randomSpawnPosition() + Vector3.new(0, 80, 0)
 			meteor.Parent = Workspace
 
+			local fire = Instance.new("Fire")
+			fire.Size = 10
+			fire.Heat = 12
+			fire.Color = Color3.fromRGB(255, 170, 60)
+			fire.SecondaryColor = Color3.fromRGB(255, 80, 0)
+			fire.Parent = meteor
+
+			local trail = Instance.new("ParticleEmitter")
+			trail.Color = ColorSequence.new(Color3.fromRGB(255, 200, 120), Color3.fromRGB(80, 80, 80))
+			trail.Size = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 3),
+				NumberSequenceKeypoint.new(1, 0),
+			})
+			trail.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.2),
+				NumberSequenceKeypoint.new(1, 1),
+			})
+			trail.Lifetime = NumberRange.new(0.6, 1.2)
+			trail.Rate = 60
+			trail.Speed = NumberRange.new(0, 1)
+			trail.Parent = meteor
+
 			local bodyVelocity = Instance.new("BodyVelocity")
 			bodyVelocity.Velocity = Vector3.new(0, -60, 0)
 			bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)

@@ -17,6 +17,7 @@ local PlayerService = require(ServerScriptService.Services.PlayerService)
 local WeaponService = require(ServerScriptService.Services.WeaponService)
 local AIService = require(ServerScriptService.Services.AIService)
 local ArenaDirector = require(ServerScriptService.Services.ArenaDirector)
+local AmbienceService = require(ServerScriptService.Services.AmbienceService)
 
 print("[LiveInteractive] Booting...")
 
@@ -34,6 +35,7 @@ Players.PlayerAdded:Connect(function(player)
 	end)
 end)
 
+AmbienceService.apply()
 ArenaDirector.buildArena()
 ArenaDirector.startAmbientSpawning()
 AIService.start()

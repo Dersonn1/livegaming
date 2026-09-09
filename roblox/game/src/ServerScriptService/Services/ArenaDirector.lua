@@ -30,7 +30,8 @@ local function randomPointInArena(): Vector3
 	return center + Vector3.new(math.cos(angle) * radius, 5, math.sin(angle) * radius)
 end
 
---- Builds a simple circular ring of walls so the arena has a visible, physical boundary.
+--- Builds a circular floor + wall ring with accent lighting so the arena
+--- reads as an actual designed space instead of the default flat baseplate.
 function ArenaDirector.buildArena()
 	if workspace:FindFirstChild("ArenaWalls") then
 		return -- already built for this server session
@@ -41,22 +42,57 @@ function ArenaDirector.buildArena()
 	folder.Name = "ArenaWalls"
 	folder.Parent = workspace
 
+	-- Round floor (a squat cylinder), replacing the visual footprint of the
+	-- default flat baseplate inside the arena bounds.
+	local floor = Instance.new("Part")
+	floor.Name = "ArenaFloor"
+	floor.Shape = Enum.PartType.Cylinder
+	floor.Size = Vector3.new(4, ARENA_RADIUS * 2, ARENA_RADIUS * 2)
+	-- Thickness is 4 studs (the cylinder's local X, its "length" axis once
+	-- rotated to lie flat below) so sinking the center by half of that puts
+	-- the floor's TOP surface exactly at spawn height.
+	floor.CFrame = CFrame.new(center - Vector3.new(0, 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	floor.Anchored = true
+	floor.Color = Color3.fromRGB(90, 95, 105)
+	floor.Material = Enum.Material.Slate
+	floor.Parent = folder
+
 	local segments = 24
 	for i = 1, segments do
 		local angle = (i / segments) * math.pi * 2
 		local nextAngle = ((i + 1) / segments) * math.pi * 2
 		local pos = center + Vector3.new(math.cos(angle) * ARENA_RADIUS, WALL_HEIGHT / 2, math.sin(angle) * ARENA_RADIUS)
 		local nextPos = center + Vector3.new(math.cos(nextAngle) * ARENA_RADIUS, WALL_HEIGHT / 2, math.sin(nextAngle) * ARENA_RADIUS)
+		local mid = (pos + nextPos) / 2
 		local segmentLength = (nextPos - pos).Magnitude
 
 		local wall = Instance.new("Part")
 		wall.Name = "WallSegment"
 		wall.Size = Vector3.new(segmentLength * 1.15, WALL_HEIGHT, 1.5)
 		wall.Anchored = true
-		wall.Color = Color3.fromRGB(60, 65, 75)
-		wall.Material = Enum.Material.Concrete
-		wall.CFrame = CFrame.new((pos + nextPos) / 2, nextPos)
+		wall.Color = Color3.fromRGB(55, 58, 68)
+		wall.Material = Enum.Material.Basalt
+		wall.CFrame = CFrame.new(mid, nextPos)
 		wall.Parent = folder
+
+		-- A glowing trim strip along the top of every other wall segment
+		-- reads as intentional level design and doubles as ambient light.
+		if i % 2 == 0 then
+			local trim = Instance.new("Part")
+			trim.Name = "WallTrim"
+			trim.Size = Vector3.new(segmentLength * 1.15, 0.6, 1.7)
+			trim.Anchored = true
+			trim.Material = Enum.Material.Neon
+			trim.Color = Color3.fromRGB(255, 140, 60)
+			trim.CFrame = wall.CFrame * CFrame.new(0, WALL_HEIGHT / 2 + 0.3, 0)
+			trim.Parent = folder
+
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromRGB(255, 160, 90)
+			light.Range = 20
+			light.Brightness = 2
+			light.Parent = trim
+		end
 	end
 end
 
